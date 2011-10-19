@@ -1,0 +1,5 @@
+TI Launchpad with MSP430
+
+WS2801 RGB LED Strip, 1m, 32leds
+
+SPI bit banged code to transfer 24 bit rgb/pwm data
