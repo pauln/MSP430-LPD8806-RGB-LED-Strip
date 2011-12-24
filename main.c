@@ -349,7 +349,7 @@ void setPixelS(unsigned int n, unsigned long c)
 // rotate colorwheel for rainbows
 unsigned long wheel(unsigned char wheelpos)
 {
-	if (wheelpos <85)
+	if (wheelpos <=85)
 	{
 		return color( wheelpos * 3, 255 - wheelpos * 3, 0 );
 	}
