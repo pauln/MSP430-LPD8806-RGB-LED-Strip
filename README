@@ -1,5 +1,6 @@
 TI Launchpad with MSP430
 
-WS2801 RGB LED Strip, 1m, 32leds
+LPD8806 RGB LED Strip control code
+Defaults to 64 LEDs = 2m - if you're working with a different amount, change the line which reads "#define NUMLEDS 64" to the number you have.
 
 SPI bit banged code to transfer 24 bit rgb/pwm data
