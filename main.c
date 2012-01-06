@@ -1,22 +1,31 @@
-/****************************************************************/
-/* Greg Whitmore												*/
-/* greg@gwdeveloper.net											*/
-/* www.gwdeveloper.net											*/
-/****************************************************************/
-/* released under the "Use at your own risk" license			*/
-/* use it how you want, where you want and have fun				*/
-/* debugging the code.											*/
-/* MSP430 spi bit bang WS2801 RGB LED strip						*/
-/****************************************************************/
-/* code was translated from adafruit ws2801 arduino library		*/
-/* https://github.com/adafruit/WS2801-Library					*/
+/*******************************************************************/
+/* Based on WS2801 control code by:                                */
+/* Greg Whitmore                                                   */
+/* greg@gwdeveloper.net                                            */
+/* www.gwdeveloper.net                                             */
+/*******************************************************************/
+/* Modified to control LPD8806-based strips by:                    */
+/* Paul Nicholls                                                   */
+/* https://github.com/MaxThrax/MSP430-LPD8806-RGB-LED-Strip        */
+/*******************************************************************/
+/* released under the "Use at your own risk" license               */
+/* use it how you want, where you want and have fun                */
+/* debugging the code.                                             */
+/* MSP430 spi bit bang WS2801 RGB LED strip                        */
+/*******************************************************************/
+/* WS2801 code was translated from Adafruit WS2801 Arduino library */
+/* https://github.com/adafruit/WS2801-Library                      */
+/* LPD8806 conversion based on Adafruit LPD806 Arduino library:    */
+/* https://github.com/adafruit/LPD8806                             */
+/*******************************************************************/
 
 #include <msp430.h>
+#include <legacymsp430.h>
 
 // constant defines
 #define DATA BIT7
 #define CLOCK BIT6
-#define NUMLEDS 32
+#define NUMLEDS 64
 
 // wdt delay constants
 #define MCLK_FREQUENCY      1000000
@@ -53,15 +62,15 @@ void showrainbow(void);
 
 // random function and delay millis borrowed from NatureTM.com
 // random generator slightly modified to create 32bit value
-unsigned long adcGenRand32(void);
+unsigned long adcGenRand24(void);
 void delayMillis(unsigned long milliseconds);
 
 // main colors
-unsigned long clear = 0x000000;
-unsigned long red = 0xFF0000;
-unsigned long green = 0x00FF00;
-unsigned long blue = 0x0000FF;
-unsigned long white = 0x80FFFF;
+unsigned long clear = 0x808080 | 0x000000;
+unsigned long red = 0x808080 | 0x00FF00;
+unsigned long green = 0x808080 | 0xFF0000;
+unsigned long blue = 0x808080 | 0x0000FF;
+unsigned long white = 0x808080 | 0x80FFFF;
 
 unsigned long randomcolor;
 
@@ -83,7 +92,7 @@ void main(void)
 	init();
 	
 	colorwipe(clear); // clear led strip
-	
+	delayMillis(1000);
 	while (1)
 	{	
 		demos();
@@ -99,18 +108,18 @@ void randomchase(void)
 	int m;
 	for ( m = 0; m <= NUMLEDS; m++ )
 	{
-		pixels[m] = adcGenRand32();
+		pixels[m] = adcGenRand24();
 		pixels[m-1] = clear;
 		display();
 		delayMillis(100);
 	}
 	for ( m = NUMLEDS; m >= 0; m-- )
 	{
-		pixels[m] = adcGenRand32();
+		pixels[m] = adcGenRand24();
 		pixels[m+1] = clear;
 		display();
 		delayMillis(100);
-	}			
+	}
 }
 
 // police light bar chaser
@@ -179,12 +188,11 @@ void randomdance(void)
 		
 		for ( m = 0; m < NUMLEDS; m++ )
 		{
-			pixels[m] = adcGenRand32();
+			pixels[m] = adcGenRand24();
 			display();
 		}
 }
 
-// blink solid color
 void solidblink(unsigned long c)
 {
 	colorwipe(c);
@@ -231,7 +239,7 @@ void colorwipe(unsigned long c)
 	
 	for ( v=0; v < NUMLEDS; v++)
 		setPixelS(v, c);
-		display();
+	display();
 		//delayMillis(100);
 }
 
@@ -272,28 +280,41 @@ void demos(void)
 
 /* library functions */
 
+// write a bunch of zeroes, used for latch
+void writezeros(unsigned int n) {
+	unsigned int i;
+	P1OUT &= ~DATA; // Data low
+	for(i = 8 * n; i>0; i--) {
+		P1OUT |= CLOCK;
+		P1OUT &= ~CLOCK;
+	}
+}
+
 //initialization
 void init(void)
 {
+	int i;
 	P1DIR |= DATA + CLOCK; // set data and clock pins to output
+	P1OUT &= ~DATA; // Data low
+	P1OUT &= ~CLOCK;
+	for(i=0; i<NUMLEDS; i++) {
+		pixels[i] = 0x808080;
+	}
+	writezeros(3 * ((NUMLEDS + 63) / 64)); // latch to wake it up
 }
 
 // send data to led strip; create patten with a 'use' function then send with display
 void display(void)
 {
 	unsigned long data;
-	
-    P1OUT &= ~CLOCK;
-    delayMillis(1);
     
     // send all the pixels
     for ( p=0; p < NUMLEDS ; p++ )
     {
         data = pixels[p];
-	// 24 bits of data per pixel
+        // 24 bits of data per pixel
         for ( i=0x800000; i>0 ; i>>=1 )
         {
-            P1OUT &= ~CLOCK;
             if (data & i)
             {
                 P1OUT |= DATA;
@@ -303,39 +324,33 @@ void display(void)
                 P1OUT &= ~DATA;
             }
             P1OUT |= CLOCK;    // latch on clock rise
+            P1OUT &= ~CLOCK;
         }
     }
-    // toggle clock low to display data
-    P1OUT &= ~CLOCK;
-    delayMillis(1);
+    writezeros(3 * ((NUMLEDS + 63) / 64)); // latch
+    delayMillis(3);
 }
 
 // create 24bit color value
 unsigned long color(unsigned char r, unsigned char g, unsigned char b)
 {
 	unsigned long c;
-	c = r;
-	c <<= 8;
-	c |= g;
-	c <<= 8;
-	c |= b;
+	
+	c = 0x808080 | ((unsigned long)g << 16) | ((unsigned long)r << 8) | (unsigned long)b;
 	return c;
+}
+// create color value from an unsigned long, so you can use colorHex(0xABCDEF);
+unsigned long colorHex(unsigned long hex)
+{
+	return 0x808080 | hex;
 }
 
 // set pixel to specified color
 void setPixel(unsigned int n, unsigned char r, unsigned char g, unsigned char b)
 {
-  unsigned long data;
-
-  if (n > NUMLEDS) return;
-
-  data = g;
-  data <<= 8;
-  data |= b;
-  data <<= 8;
-  data |= r;
-  
-  pixels[n] = data;
+	if (n > NUMLEDS) return;
+	
+	pixels[n] = color(r, g, b);
 }
 
 //set pixel to color by function
@@ -343,7 +358,7 @@ void setPixelS(unsigned int n, unsigned long c)
 {
 	if ( n > NUMLEDS ) return;
 	
-	pixels[n] = c & 0xFFFFFF;
+	pixels[n] = c;
 }
 
 // rotate colorwheel for rainbows
@@ -364,13 +379,13 @@ unsigned long wheel(unsigned char wheelpos)
 	}
 }
 
-// generate random 32bit number using ADC10 channel 5; leave P1.4 & P1.5 floating
-unsigned long adcGenRand32(void)
+// generate random 24bit number using ADC10 channel 5; leave P1.4 & P1.5 floating
+unsigned long adcGenRand24(void)
 {
   char bit;
   unsigned long random;
   
-  for(bit = 0; bit < 32; bit++){
+  for(bit = 0; bit < 24; bit++){
     ADC10CTL1 |= INCH_5;
     ADC10CTL0 |= SREF_1 + ADC10SHT_1 + REFON + ADC10ON;
     ADC10CTL0 |= ENC + ADC10SC;
@@ -378,7 +393,7 @@ unsigned long adcGenRand32(void)
     random <<= 1;
     random |= (ADC10MEM & 0x01);
   }
-  return random;
+  return random | 0x808080;
 }
 
 // millisecond delay counter using WDT
@@ -388,7 +403,6 @@ void delayMillis(unsigned long milliseconds){
 }
 
 // wdt isr
-#pragma vector=WDT_VECTOR
-__interrupt void watchdog_timer(void){
+interrupt(WDT_VECTOR) watchdog_timer(void){
   wdtCounter++;
 }
