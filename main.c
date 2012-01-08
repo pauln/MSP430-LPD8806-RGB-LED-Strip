@@ -104,14 +104,14 @@ void main(void) {
 void randomchase(void) {
   int m;
   for ( m = 0; m <= NUMLEDS; m++ ) {
-    pixels[m] = adcGenRand24();
-    pixels[m-1] = clear;
+    setPixelS(m, adcGenRand24());
+    setPixelS(m-1, clear);
     display();
     delayMillis(100);
   }
   for ( m = NUMLEDS; m >= 0; m-- ) {
-    pixels[m] = adcGenRand24();
-    pixels[m+1] = clear;
+    setPixelS(m, adcGenRand24());
+    setPixelS(m+1, clear);
     display();
     delayMillis(100);
   }
@@ -126,20 +126,20 @@ void copcar(void) {
 
   for ( m = 0; m < NUMLEDS; m++ ) {
     if ( m <= middle ) {
-      pixels[m] = red;
-      pixels[m - 2] = clear;
+      setPixelS(m, red);
+      setPixelS(m - 2, clear);
 
-      pixels[NUMLEDS - m] = blue;
-      pixels[NUMLEDS - m + 2] = clear;
+      setPixelS(NUMLEDS - m, blue);
+      setPixelS(NUMLEDS - m + 2, clear);
     }
     display();
 
     if  ( m >= middle ) {
-      pixels[m] = blue;
-      pixels[m - 2] = clear;
+      setPixelS(m, blue);
+      setPixelS(m - 2, clear);
   
-      pixels[NUMLEDS - m] = red;
-      pixels[NUMLEDS - m + 2] = clear;
+      setPixelS(NUMLEDS - m, red);
+      setPixelS(NUMLEDS - m + 2, clear);
     }
     display();
   }
@@ -152,18 +152,18 @@ void goJoe(unsigned long time) {
   colorwipe(clear); // clear display from existing patterns
     
   for ( m = 0; m < NUMLEDS; m++ ) {
-    pixels[m] = blue;
-    if(m>=2) pixels[m - 2] = red;
-    if(m>=4) pixels[m - 4] = white;
-    if(m>=6) pixels[m - 6] = clear;
+    setPixelS(m, blue);
+    setPixelS(m - 2, red);
+    setPixelS(m - 4, white);
+    setPixelS(m - 6, clear);
     display();
     delayMillis(time);
   }
   for ( m = NUMLEDS; m >= 0; m-- ) {
-    pixels[m] = clear;
-    if(m>=2) pixels[m - 2] = white;
-    if(m>=4) pixels[m - 4] = red;
-    if(m>=6) pixels[m - 6] = blue;
+    setPixelS(m, clear);
+    setPixelS(m - 2, white);
+    setPixelS(m - 4, red);
+    setPixelS(m - 6, blue);
     display();
     delayMillis(time);
   }
@@ -174,7 +174,7 @@ void randomdance(void) {
   int m;
     
     for ( m = 0; m < NUMLEDS; m++ ) {
-      pixels[m] = adcGenRand24();
+      setPixelS(m, adcGenRand24());
       display();
     }
 }
@@ -310,14 +310,14 @@ unsigned long colorHex(unsigned long hex) {
 
 // set pixel to specified color
 void setPixel(unsigned int n, unsigned char r, unsigned char g, unsigned char b) {
-  if (n > NUMLEDS) return;
+  if ( n > NUMLEDS || n < 0 ) return;
   
   pixels[n] = color(r, g, b);
 }
 
 //set pixel to color by function
 void setPixelS(unsigned int n, unsigned long c) {
-  if ( n > NUMLEDS ) return;
+  if ( n > NUMLEDS || n < 0 ) return;
   
   pixels[n] = c;
 }
