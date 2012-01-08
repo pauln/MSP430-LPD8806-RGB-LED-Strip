@@ -70,7 +70,7 @@ unsigned long clear = 0x808080 | 0x000000;
 unsigned long red = 0x808080 | 0x00FF00;
 unsigned long green = 0x808080 | 0xFF0000;
 unsigned long blue = 0x808080 | 0x0000FF;
-unsigned long white = 0x808080 | 0x80FFFF;
+unsigned long white = 0x808080 | 0xFFFFFF;
 
 unsigned long randomcolor;
 
