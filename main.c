@@ -227,15 +227,15 @@ void demos(void) {
     
 // run demos for display
     
-  /*for (x = 0; x < 3; x++) {
+  for (x = 0; x < 3; x++) {
     copcar();
-  }*/
+  }
     
   for (x = 0; x < 3; x++) {
     goJoe(50);
   }
 
-  /*for (x = 0; x < 5; x++) {
+  for (x = 0; x < 5; x++) {
     randomdance();
   }
 
@@ -247,7 +247,7 @@ void demos(void) {
 
   for (x = 0; x < 2; x++) {
     rainbowcycle();
-  }*/
+  }
 }
 
 /* library functions */
