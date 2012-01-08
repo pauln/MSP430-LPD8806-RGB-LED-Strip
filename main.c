@@ -153,17 +153,17 @@ void goJoe(unsigned long time) {
     
   for ( m = 0; m < NUMLEDS; m++ ) {
     pixels[m] = blue;
-    if(m>2) pixels[m - 2] = red;
-    if(m>4) pixels[m - 4] = white;
-    if(m>6) pixels[m - 6] = clear;
+    if(m>=2) pixels[m - 2] = red;
+    if(m>=4) pixels[m - 4] = white;
+    if(m>=6) pixels[m - 6] = clear;
     display();
     delayMillis(time);
   }
   for ( m = NUMLEDS; m >= 0; m-- ) {
     pixels[m] = clear;
-    if(m>2) pixels[m - 2] = white;
-    if(m>4) pixels[m - 4] = red;
-    if(m>6) pixels[m - 6] = blue;
+    if(m>=2) pixels[m - 2] = white;
+    if(m>=4) pixels[m - 4] = red;
+    if(m>=6) pixels[m - 6] = blue;
     display();
     delayMillis(time);
   }
