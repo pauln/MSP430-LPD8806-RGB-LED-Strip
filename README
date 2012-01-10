@@ -1,6 +1,14 @@
 TI Launchpad with MSP430
 
-LPD8806 RGB LED Strip control code
-Defaults to 64 LEDs = 2m - if you're working with a different amount, change the line which reads "#define NUMLEDS 64" to the number you have.
+LPD8806 RGB LED Strip array-mode control code
+This version is intended to control arrays of LEDs made using rows of LPD8806-based strips joined at alternating ends:
+>___________________      Legend:  > data input (start of strip)
+ ___________________|              < data output (end of strip)
+|___________________               | join between strips
+<___________________|              _ LED strips
+
+setPixel/setPixelS functions take col, row as first two params - 0,0 is top left, 1,0 is second pixel on top row, etc.
+Defaults to 64 LEDs in 8 rows and 8 cols (64 total) - if you're working with different pixel dimensions and/or a different number of LEDs,
+change the lines which reads "#define COLS 8" and "#define ROWS 8" to the relevant numbers.
 
 SPI bit banged code to transfer 24 bit rgb/pwm data

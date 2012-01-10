@@ -25,7 +25,8 @@
 // constant defines
 #define DATA    BIT7
 #define CLOCK   BIT6
-#define NUMLEDS 64
+#define ROWS    8
+#define COLS    8
 
 // wdt delay constants
 #define MCLK_FREQUENCY      1000000
@@ -35,7 +36,8 @@ const unsigned long WDT_FREQUENCY = MCLK_FREQUENCY / WDT_DIVIDER;
 volatile unsigned long wdtCounter = 0;
 
 // data arrays
-unsigned long pixels[NUMLEDS];
+const unsigned int NUMLEDS = ROWS * COLS;
+unsigned long pixels[ROWS * COLS];
 
 //incrementers
 int p;
@@ -44,9 +46,11 @@ long i;
 // prototypes
 void init(void);
 void display(void);
+unsigned int calcIndex(unsigned int col, unsigned int row);
 unsigned long color(unsigned char r, unsigned char g, unsigned char b);
-void setPixelS(unsigned int n, unsigned long c);
-void setPixel(unsigned int n, unsigned char r, unsigned char g, unsigned char b);
+unsigned long colorHex(unsigned long hex);
+void setPixelS(unsigned int col, unsigned int row, unsigned long c);
+void setPixel(unsigned int col, unsigned int row, unsigned char r, unsigned char g, unsigned char b);
 unsigned long wheel(unsigned char wheelpos);
 
 // pattern functions
@@ -58,7 +62,7 @@ void randomdance(void);
 void solidblink(unsigned long c);
 void colorwipe(unsigned long c);
 void rainbowcycle(void);
-void showrainbow(void);
+void showrainbow(unsigned int delay);
 
 // random function and delay millis borrowed from NatureTM.com
 // random generator slightly modified to create 32bit value
@@ -99,7 +103,7 @@ void main(void) {
 }
 
 /* use functions */
-
+/*
 // random chase
 void randomchase(void) {
   int m;
@@ -115,68 +119,85 @@ void randomchase(void) {
     display();
     delayMillis(100);
   }
-}
+}*/
 
 // police light bar chaser
 void copcar(void) {
-  int m;
-  int middle = NUMLEDS / 2 ;
+  unsigned int row, col;
+  unsigned int middle = COLS / 2 ;
 
   colorwipe(clear);
 
-  for ( m = 0; m < NUMLEDS; m++ ) {
-    if ( m <= middle ) {
-      setPixelS(m, red);
-      setPixelS(m - 2, clear);
+  for ( col = 0; col < COLS; col++ ) {
+    if ( col <= middle ) {
+      for ( row = 0; row < ROWS; row++ ) {
+        setPixelS(col, row, red);
+        setPixelS(col - 2, row, clear);
 
-      setPixelS(NUMLEDS - m, blue);
-      setPixelS(NUMLEDS - m + 2, clear);
+        setPixelS(COLS - col, row, blue);
+        setPixelS(COLS - col + 2, row, clear);
+      }
     }
     display();
 
-    if  ( m >= middle ) {
-      setPixelS(m, blue);
-      setPixelS(m - 2, clear);
-  
-      setPixelS(NUMLEDS - m, red);
-      setPixelS(NUMLEDS - m + 2, clear);
+    if  ( col >= middle ) {
+      for ( row = 0; row < ROWS; row++ ) {
+        setPixelS(col, row, blue);
+        setPixelS(col - 2, row, clear);
+    
+        setPixelS(COLS - col, row, red);
+        setPixelS(COLS - col + 2, row, clear);
+      }
     }
     display();
   }
 }
 
-// red white and blue chasers
+// red white and blue flag
 void goJoe(unsigned long time) {
-  int m;
+  int bluecols, bluerows, col, row;
+  bluecols = (COLS+1)/3;
+  bluerows = (ROWS+1)/2;
 
   colorwipe(clear); // clear display from existing patterns
     
-  for ( m = 0; m < NUMLEDS; m++ ) {
-    setPixelS(m, blue);
-    setPixelS(m - 2, red);
-    setPixelS(m - 4, white);
-    setPixelS(m - 6, clear);
-    display();
-    delayMillis(time);
+  for ( col = 0; col < COLS; col++ ) {
+    for ( row = 0; row < ROWS; row++ ) {
+      if ( col < bluecols && row < bluerows ) {
+        if ( (col%2==0 && row%2==1) || (col%2==1 && row%2==0) ) {
+          setPixelS(col, row, white);
+        } else {
+          setPixelS(col, row, blue);
+        }
+      } else {
+        if ( row%2==0 ) {
+          setPixelS(col, row, red);
+        } else if (row < (ROWS-1)) {
+          setPixelS(col, row, white);
+        }
+      }
+    }
   }
-  for ( m = NUMLEDS; m >= 0; m-- ) {
-    setPixelS(m, clear);
-    setPixelS(m - 2, white);
-    setPixelS(m - 4, red);
-    setPixelS(m - 6, blue);
-    display();
-    delayMillis(time);
-  }
+  display();
+  delayMillis(time);
 }
 
 // send random colors down each pixel
 void randomdance(void) {
-  int m;
+  unsigned int max, m, n;
+  max = COLS>ROWS?COLS:ROWS;
     
-    for ( m = 0; m < NUMLEDS; m++ ) {
-      setPixelS(m, adcGenRand24());
-      display();
+  setPixelS(0, 0, adcGenRand24());
+  display();
+  delayMillis(100);
+  for ( m = 0; m < max; m++ ) {
+    for (n = 0; n < m; n++ ) {
+      setPixelS(n, m, adcGenRand24());
+      setPixelS(m, n, adcGenRand24());
     }
+    display();
+    delayMillis(100);
+  }
 }
 
 void solidblink(unsigned long c) {
@@ -187,11 +208,14 @@ void solidblink(unsigned long c) {
 
 // animate fading rainbow cycle
 void rainbowcycle(void) {
-  int k, j;
+  unsigned int row, col;
+  int j;
   
   for ( j=0; j<256; j++ ) {
-    for ( k=0; k < NUMLEDS; k++ ) {
-      setPixelS(k, wheel( ( k+j) % 255 ) );
+    for ( col=0; col < COLS; col++ ) {
+      for ( row=0; row < ROWS; row++ ) {  
+        setPixelS(col, row, wheel( ( col+j) % 255 ) );
+      }
     }
     display();
     delayMillis(100);
@@ -199,24 +223,25 @@ void rainbowcycle(void) {
 }
 
 // display static rainbow
-void showrainbow(void) {
-  int k, j;
+void showrainbow(unsigned int delay) {
+  unsigned int row, col;
   
-  for ( j=0; j < 256 * 5; j++ ) {
-    for ( k=0; k < NUMLEDS; k++ ) {
-      setPixelS(k, wheel( ((k * 256 / NUMLEDS ) + j) % 255) );
+  for ( col=0; col < COLS; col++ ) {
+    for ( row=0; row < ROWS; row++ ) {
+      setPixelS(col, row, wheel( ((col * 256 / COLS )) % 255) );
     }
   }
   display();
-  delayMillis(100);
+  delayMillis(delay);
 }
       
 // wipe strip to selected color
 void colorwipe(unsigned long c) {
-  int v;
+  unsigned int col, row;
   
-  for ( v=0; v < NUMLEDS; v++)
-    setPixelS(v, c);
+  for ( col=0; col < COLS; col++)
+    for ( row=0; row < ROWS; row++)
+      setPixelS(col, row, c);
   display();
     //delayMillis(100);
 }
@@ -231,15 +256,15 @@ void demos(void) {
     copcar();
   }
     
-  for (x = 0; x < 3; x++) {
-    goJoe(50);
-  }
+  goJoe(3000);
 
+  colorwipe(clear);
+  
   for (x = 0; x < 5; x++) {
     randomdance();
   }
-
-  colorwipe(clear);
+  
+  showrainbow(5000);
     
   for (x = 0; x < 3; x++) {
     solidblink(green);
@@ -308,17 +333,26 @@ unsigned long colorHex(unsigned long hex) {
   return 0x808080 | hex;
 }
 
+unsigned int calcIndex(unsigned int col, unsigned int row) {
+  if(row%2==1) {
+    col = COLS-col-1;
+  }
+  return COLS*row + col; // 0-based means that the first row will already be row=0, no need to subtract one
+}
+
 // set pixel to specified color
-void setPixel(unsigned int n, unsigned char r, unsigned char g, unsigned char b) {
-  if ( n > NUMLEDS || n < 0 ) return;
-  
+void setPixel(unsigned int col, unsigned int row, unsigned char r, unsigned char g, unsigned char b) {
+  int n;
+  if ( row >= ROWS || row < 0 || col >= COLS || col < 0) return;
+  n = calcIndex(col, row);
   pixels[n] = color(r, g, b);
 }
 
 //set pixel to color by function
-void setPixelS(unsigned int n, unsigned long c) {
-  if ( n > NUMLEDS || n < 0 ) return;
-  
+void setPixelS(unsigned int col, unsigned int row, unsigned long c) {
+  int n;
+  if ( row >= ROWS || row < 0 || col >= COLS || col < 0) return;
+  n = calcIndex(col, row);
   pixels[n] = c;
 }
 
