@@ -200,12 +200,10 @@ void rainbowcycle(void) {
 
 // display static rainbow
 void showrainbow(void) {
-  int k, j;
+  int k;
   
-  for ( j=0; j < 256 * 5; j++ ) {
-    for ( k=0; k < NUMLEDS; k++ ) {
-      setPixelS(k, wheel( ((k * 256 / NUMLEDS ) + j) % 255) );
-    }
+  for ( k=0; k < NUMLEDS; k++ ) {
+    setPixelS(k, wheel( ((k * 256 / NUMLEDS )) % 255) );
   }
   display();
   delayMillis(100);
