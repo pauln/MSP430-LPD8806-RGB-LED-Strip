@@ -69,7 +69,6 @@ void showrainbow(unsigned int delay);
 // random generator slightly modified to create 32bit value
 unsigned long adcGenRand24(void);
 void delayMillis(unsigned long milliseconds);
-void showByte(unsigned char offset, unsigned char byte);
 
 // main colors
 unsigned long clear = 0x808080 | 0x000000;
