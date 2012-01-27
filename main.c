@@ -22,6 +22,8 @@
 #include <msp430.h>
 #include <legacymsp430.h>
 
+#include "23K256.h"
+
 // constant defines
 #define DATA    BIT7
 #define CLOCK   BIT6
@@ -29,7 +31,7 @@
 #define COLS    8
 
 // wdt delay constants
-#define MCLK_FREQUENCY      1000000
+#define MCLK_FREQUENCY      2000000
 #define WDT_DIVIDER         512
 
 const unsigned long WDT_FREQUENCY = MCLK_FREQUENCY / WDT_DIVIDER;
@@ -37,7 +39,6 @@ volatile unsigned long wdtCounter = 0;
 
 // data arrays
 const unsigned int NUMLEDS = ROWS * COLS;
-unsigned long pixels[ROWS * COLS];
 
 //incrementers
 int p;
@@ -68,6 +69,7 @@ void showrainbow(unsigned int delay);
 // random generator slightly modified to create 32bit value
 unsigned long adcGenRand24(void);
 void delayMillis(unsigned long milliseconds);
+void showByte(unsigned char offset, unsigned char byte);
 
 // main colors
 unsigned long clear = 0x808080 | 0x000000;
@@ -81,9 +83,10 @@ unsigned long randomcolor;
 void main(void) {
   //WDTCTL = WDTPW + WDTHOLD;
   
-  // use 1MHz calibrated values
-  DCOCTL = CALDCO_1MHZ;
-  BCSCTL1 = CALBC1_1MHZ;
+  // use 16MHz calibrated values
+  BCSCTL1 = CALBC1_16MHZ;
+  DCOCTL  = CALDCO_16MHZ;
+  BCSCTL2 |= DIVS_3;
   // wdt set as interval
   WDTCTL = WDTPW + WDTTMSEL + WDTIS1;
   // wdt interrupt
@@ -150,6 +153,7 @@ void copcar(void) {
       }
     }
     display();
+    delayMillis(100);
   }
 }
 
@@ -289,36 +293,37 @@ void writezeros(unsigned int n) {
 
 //initialization
 void init(void) {
-  int i;
   P1DIR |= DATA + CLOCK; // set data and clock pins to output
   P1OUT &= ~DATA; // Data low
   P1OUT &= ~CLOCK;
-  for(i=0; i<NUMLEDS; i++) {
-    pixels[i] = 0x808080;
-  }
   writezeros(3 * ((NUMLEDS + 63) / 64)); // latch to wake it up
+  sram_init();
 }
 
 // send data to led strip; create patten with a 'use' function then send with display
 void display(void) {
-  unsigned long data;
-    
-    // send all the pixels
-    for ( p=0; p < NUMLEDS ; p++ ) {
-      data = pixels[p];
-      // 24 bits of data per pixel
-      for ( i=0x800000; i>0 ; i>>=1 ) {
-        if (data & i) {
-            P1OUT |= DATA;
-        } else {
-            P1OUT &= ~DATA;
-        }
-        P1OUT |= CLOCK;    // latch on clock rise
-        P1OUT &= ~CLOCK;
+
+  // Stream data from SRAM to LED strip
+  sram_select_chip();
+  sram_send_command(SRAM_READ);
+  sram_send_address(0);
+  for ( sram_byte=0; sram_byte < NUMLEDS*3; sram_byte++ ) {
+    for ( sram_bit=0x80; sram_bit>0; sram_bit>>=1 ) {
+      P2OUT |= SRAM_CLK;
+      P1OUT &= ~CLOCK;
+      if (P2IN & SRAM_IN) {
+        P1OUT |= DATA;
+      } else {
+        P1OUT &= ~DATA;
       }
+      P2OUT &= ~SRAM_CLK;
+      P1OUT |= CLOCK;
     }
-    writezeros(3 * ((NUMLEDS + 63) / 64)); // latch
-    delayMillis(3);
+  }
+  sram_deselect_chip();
+
+  writezeros(3 * ((NUMLEDS + 63) / 64)); // LED strip latch
+  delayMillis(3);
 }
 
 // create 24bit color value
@@ -343,17 +348,25 @@ unsigned int calcIndex(unsigned int col, unsigned int row) {
 // set pixel to specified color
 void setPixel(unsigned int col, unsigned int row, unsigned char r, unsigned char g, unsigned char b) {
   int n;
+  unsigned char bytes[3];
   if ( row >= ROWS || row < 0 || col >= COLS || col < 0) return;
   n = calcIndex(col, row);
-  pixels[n] = color(r, g, b);
+  bytes[0] = 0x80 | g;
+  bytes[1] = 0x80 | r;
+  bytes[2] = 0x80 | b;
+  sram_write_bytes(n*3, bytes, 3);
 }
 
 //set pixel to color by function
 void setPixelS(unsigned int col, unsigned int row, unsigned long c) {
-  int n;
+  unsigned char r;
+  unsigned char g;
+  unsigned char b;
   if ( row >= ROWS || row < 0 || col >= COLS || col < 0) return;
-  n = calcIndex(col, row);
-  pixels[n] = c;
+  g = c >> 16;
+  r = c >> 8;
+  b = c;
+  setPixel(col, row, r, g, b);
 }
 
 // rotate colorwheel for rainbows
