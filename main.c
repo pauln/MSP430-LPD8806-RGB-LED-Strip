@@ -27,8 +27,8 @@
 // constant defines
 #define DATA    BIT7
 #define CLOCK   BIT6
-#define ROWS    28
-#define COLS    8
+#define ROWS    16
+#define COLS    16
 
 // wdt delay constants
 #define MCLK_FREQUENCY      2000000
