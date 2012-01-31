@@ -1,4 +1,4 @@
-TI Launchpad with MSP430
+TI Launchpad with MSP430(G2553, but may work on others with slight modifications)
 
 LPD8806 RGB LED Strip array-mode control code
 This version is intended to control arrays of LEDs made using rows of LPD8806-based strips joined at alternating ends:
@@ -7,8 +7,18 @@ This version is intended to control arrays of LEDs made using rows of LPD8806-ba
 |___________________               | join between strips
 <___________________|              _ LED strips
 
-setPixel/setPixelS functions take col, row as first two params - 0,0 is top left, 1,0 is second pixel on top row, etc.
-Defaults to 64 LEDs in 8 rows and 8 cols (64 total) - if you're working with different pixel dimensions and/or a different number of LEDs,
-change the lines which reads "#define COLS 8" and "#define ROWS 8" to the relevant numbers.
+It uses a Microchip 23K256 32KB SRAM chip to store pixel data, to allow larger arrays to be used.  Connect as follows:
+MSP430  23K256
+ P2.1    pin 1 (CS)
+ P2.2    pin 5 (SI)
+ P2.3    pin 7 (HOLD)
+ P2.4    pin 6 (SCK)
+ P2.5    pin 2 (SO)
+ GND     pin 4 (Vss)
+ VCC     pin 8 (Vcc)
 
-SPI bit banged code to transfer 24 bit rgb/pwm data
+setPixel/setPixelS functions take col, row as first two params - 0,0 is top left, 1,0 is second pixel on top row, etc.
+Defaults to 256 RGB LEDs in 16 rows and 16 cols - if you're working with different pixel dimensions and/or a different
+number of LEDs, change the lines which reads "#define COLS 16" and "#define ROWS 16" to the relevant numbers.
+
+SPI bit banged code to transfer 24 bit rgb/pwm data between external SRAM and LPD8806 strips.
