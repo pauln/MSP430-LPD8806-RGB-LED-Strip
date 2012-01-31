@@ -27,7 +27,7 @@
 // constant defines
 #define DATA    BIT7
 #define CLOCK   BIT6
-#define ROWS    8
+#define ROWS    28
 #define COLS    8
 
 // wdt delay constants
@@ -59,7 +59,7 @@ void demos(void);
 void randomchase(void);
 void copcar(void);
 void goJoe(unsigned long time); // larger time value is slower chase
-void randomdance(void);
+void randomdance(unsigned int delay);
 void solidblink(unsigned long c);
 void colorwipe(unsigned long c);
 void rainbowcycle(void);
@@ -152,7 +152,7 @@ void copcar(void) {
       }
     }
     display();
-    delayMillis(100);
+    delayMillis(50);
   }
 }
 
@@ -186,20 +186,20 @@ void goJoe(unsigned long time) {
 }
 
 // send random colors down each pixel
-void randomdance(void) {
+void randomdance(unsigned int delay) {
   unsigned int max, m, n;
   max = COLS>ROWS?COLS:ROWS;
     
   setPixelS(0, 0, adcGenRand24());
   display();
-  delayMillis(100);
+  delayMillis(delay);
   for ( m = 0; m < max; m++ ) {
     for (n = 0; n < m; n++ ) {
       setPixelS(n, m, adcGenRand24());
       setPixelS(m, n, adcGenRand24());
     }
     display();
-    delayMillis(100);
+    delayMillis(delay);
   }
 }
 
@@ -221,7 +221,7 @@ void rainbowcycle(void) {
       }
     }
     display();
-    delayMillis(100);
+    delayMillis(10);
   }
 }
 
@@ -263,8 +263,8 @@ void demos(void) {
 
   colorwipe(clear);
   
-  for (x = 0; x < 5; x++) {
-    randomdance();
+  for (x = 0; x < 15; x++) {
+    randomdance(0);
   }
   
   showrainbow(5000);
