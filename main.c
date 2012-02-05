@@ -27,8 +27,8 @@
 // constant defines
 #define DATA    BIT7
 #define CLOCK   BIT6
-#define ROWS    16
-#define COLS    16
+#define ROWS    8
+#define COLS    8
 
 // wdt delay constants
 #define MCLK_FREQUENCY      2000000
@@ -78,6 +78,9 @@ unsigned long blue = 0x808080 | 0x0000FF;
 unsigned long white = 0x808080 | 0xFFFFFF;
 
 unsigned long randomcolor;
+
+// Include font/text handling after we've declared functions and colors
+#include "font.h"
 
 void main(void) {
   //WDTCTL = WDTPW + WDTHOLD;
@@ -275,6 +278,15 @@ void demos(void) {
 
   for (x = 0; x < 2; x++) {
     rainbowcycle();
+  }
+
+  // font demo
+  colorwipe(clear);
+  for(x=0;x<66;x++) {
+    initText();
+    displayChar(0x20+x);
+    display();
+    delayMillis(1000);
   }
 }
 
