@@ -197,7 +197,7 @@ void randomdance(unsigned int delay) {
   display();
   delayMillis(delay);
   for ( m = 0; m < max; m++ ) {
-    for (n = 0; n < m; n++ ) {
+    for (n = 0; n <= m; n++ ) {
       setPixelS(n, m, adcGenRand24());
       setPixelS(m, n, adcGenRand24());
     }
