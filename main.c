@@ -28,7 +28,7 @@
 #define DATA    BIT7
 #define CLOCK   BIT6
 #define ROWS    8
-#define COLS    8
+#define COLS    32
 
 // wdt delay constants
 #define MCLK_FREQUENCY      2000000
@@ -255,6 +255,25 @@ void colorwipe(unsigned long c) {
 // run all functions as demo
 void demos(void) {
   int x;
+
+  // font demo
+  colorwipe(clear);
+  initText();
+  displayChar('H');
+  displayChar('E');
+  displayChar('L');
+  displayChar('L');
+  displayChar('O');
+  display();
+  delayMillis(1000);
+  initText();
+  displayChar('4');
+  displayChar('3');
+  displayChar('O');
+  displayChar('H');
+  displayChar('!');
+  display();
+  delayMillis(1000);
     
 // run demos for display
     
@@ -271,22 +290,9 @@ void demos(void) {
   }
   
   showrainbow(5000);
-    
-  for (x = 0; x < 3; x++) {
-    solidblink(green);
-  }
 
   for (x = 0; x < 2; x++) {
     rainbowcycle();
-  }
-
-  // font demo
-  colorwipe(clear);
-  for(x=0;x<66;x++) {
-    initText();
-    displayChar(0x20+x);
-    display();
-    delayMillis(1000);
   }
 }
 
